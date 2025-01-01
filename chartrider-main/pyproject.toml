@@ -1,0 +1,103 @@
+[tool.poetry]
+name = "chartrider"
+version = "0.1.0"
+description = ""
+authors = ["shinhong-park <shinhong.park@linecorp.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.0.0"
+ccxt = "^4.0.3"
+numpy = "^1.24.2"
+pandas = "^2.0.3"
+black = "23.1.0"
+devtools = "^0.11.0"
+peewee = "^3.15.4"
+loguru = "^0.7.0"
+pre-commit = "^3.1.1"
+types-peewee = "^3.16.0.0"
+pyright = "^1.1.296"
+python-dotenv = "^1.0.0"
+click = "^8.1.3"
+aio-pika = "^9.1.2"
+python-telegram-bot = {version = "^20.3", extras = ["job-queue"]}
+psutil = "^5.9.5"
+docker = "^6.1.3"
+bokeh = "^3.3.0"
+pydantic-settings = "^2.0.0"
+sqlalchemy = "^2.0.20"
+alembic = "^1.11.3"
+psycopg2-binary = "^2.9.7"
+inquirer = "^3.1.3"
+tqdm = "^4.66.1"
+ruff = "^0.0.287"
+ta-lib = "^0.4.31"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.3.1"
+pytest-mock = "^3.11.1"
+pytest-cov = "^4.1.0"
+ipykernel = "^6.26.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+exclude = [
+    "**/node_modules",
+    "**/.venv",
+    "**/__pycache__",
+    "chartrider/analysis/backtesting_py",
+]
+venvPath = "."
+venv = ".venv"
+reportShadowedImports = false
+
+[tool.isort]
+profile = "black"
+
+[tool.pycln]
+all = true
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "."
+]
+
+[tool.coverage.run]
+branch = true
+
+[tool.black]
+line-length = 119
+preview = true
+
+[tool.ruff]
+line-length = 119
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+
+    # Don't complain about missing constructor:
+    "def __init__",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+    ]
+
+ignore_errors = true
+include_namespace_packages = true

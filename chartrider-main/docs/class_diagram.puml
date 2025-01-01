@@ -1,0 +1,73 @@
+@startuml ClassDiagram
+
+abstract class BaseBroker {
+	+ repository: BaseRepository
+	+ registered_strategies: List[BaseStrategy]
+	+ prepare_initial_data()
+}
+
+class LiveBroker extends BaseBroker {
+	+ repository: LiveRepository
+}
+
+class BacktestBroker extends BaseBroker {
+	+ repository: BacktestRepository
+	+ next()
+	+ update_data()
+}
+
+abstract class BaseRepository {
+	+ symbol_ohlcv: dict[str, Data]
+	+ fetch_orders()
+	+ create_order()
+	+ cancel_order()
+}
+
+class BacktestRepository extends BaseRepository {
+}
+
+class LiveRepository extends BaseRepository {
+}
+
+abstract class BaseExecutionHandler {
+	+ broker: BaseBroker
+	+ strategies: List[BaseStrategy]
+	+ run()
+}
+
+class BacktestExecutionHandler extends BaseExecutionHandler {
+	+ broker: BacktestBroker
+}
+
+class LiveExecutionHandler extends BaseExecutionHandler {
+	+ broker: LiveBroker
+}
+
+abstract class BaseStrategy {
+	+ symbol: str
+	+ broker: BaseBroker
+	+ setup()
+	+ next()
+}
+
+class VolatilityBreakout {
+}
+class RandomBuy {
+}
+
+VolatilityBreakout --|> BaseStrategy
+RandomBuy --|> BaseStrategy
+
+BacktestBroker *-- BacktestRepository
+LiveBroker *-- LiveRepository
+
+BacktestExecutionHandler *-- BacktestBroker
+LiveExecutionHandler *-- LiveBroker
+
+BaseExecutionHandler *-- BaseBroker
+BaseBroker *-- BaseRepository
+
+BaseExecutionHandler -right-{ BaseStrategy
+
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml Sequence Diagram
+
+actor User
+participant "Telegram Bot" as bot
+participant "RPC Worker" as worker
+participant "RabbitMQ Server" as rabbit
+participant "Trader Container" as trader
+database "RabbitMQ Exchange" as exchange
+database "Telegram Queue" as t_queue
+database "Trader Queue" as tr_queue
+
+User -> bot : Interact
+bot -> worker : Perform Remote Procedure Call
+worker -> trader : Spawn Trader Container
+bot -> rabbit : Establish Connection
+trader -> rabbit : Establish Connection
+
+rabbit -> exchange : Create Per-User Exchange with Hashed Secret
+exchange -> t_queue : Declare Queue
+exchange -> tr_queue : Declare Queue
+
+trader -> exchange : Publish Message
+exchange -> t_queue : Route Message
+t_queue -> bot : Receive Message
+bot -> User : Forward Message
+
+User -> bot : Send Command
+bot -> exchange : Publish Command
+exchange -> tr_queue : Route Command
+tr_queue -> trader : Receive Command
+trader -> trader : Execute Command
+
+
+trader -> exchange : Publish Message
+exchange -> t_queue : Route Message
+t_queue -> bot : Receive Message
+bot -> User : Forward Message
+
+@enduml

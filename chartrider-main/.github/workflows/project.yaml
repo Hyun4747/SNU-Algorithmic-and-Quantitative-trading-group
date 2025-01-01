@@ -1,0 +1,41 @@
+name: Auto Assign to Project(s)
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  create-update-project:
+    name: Create/update project issue
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_URL: https://github.com/orgs/ChartRiders/projects/2
+      GHPROJECT_TOKEN: ${{ secrets.GHPROJECT_TOKEN }}
+      ISSUE_FIELD_VALUE: Todo
+      PR_FIELD_VALUE: In Review
+    steps:
+      - name: Add to project
+        id: add-project
+        uses: actions/add-to-project@v0.6.1
+        with:
+          project-url: ${{ env.PROJECT_URL }}
+          github-token: ${{ env.GHPROJECT_TOKEN }}
+
+      - name: Set field value
+        run: |
+          if [[ ${{ github.event_name }} == 'issues' ]]; then
+            echo "STATUS_VALUE=${ISSUE_FIELD_VALUE}" >> $GITHUB_ENV
+          else
+            echo "STATUS_VALUE=${PR_FIELD_VALUE}" >> $GITHUB_ENV
+          fi
+
+      - name: Update project fields
+        uses: titoportas/update-project-fields@v0.1.0
+        with:
+          project-url: ${{ env.PROJECT_URL }}
+          github-token: ${{ env.GHPROJECT_TOKEN }}
+          item-id: ${{ steps.add-project.outputs.itemId }}
+          field-keys: Status
+          field-values: ${{ env.STATUS_VALUE }}

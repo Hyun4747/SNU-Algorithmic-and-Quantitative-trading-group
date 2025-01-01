@@ -1,0 +1,12 @@
+.venv
+*.html
+__pycache__
+.DS_Store
+*.pyc
+.secret.*.local
+*.sqlite
+.vscode
+*.lprof
+.pytest_cache
+*.db
+*.log

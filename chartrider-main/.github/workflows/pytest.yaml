@@ -1,0 +1,66 @@
+name: pytest
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Install TA-LIB
+        run: |
+          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+          tar xvfz ta-lib-0.4.0-src.tar.gz
+          cd ta-lib
+          ./configure
+          make
+          sudo make install
+
+      - uses: actions/checkout@v3
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: poetry
+
+      - name: Set poetry environment
+        run: |
+          poetry env use 3.11
+
+      - name: Install dependencies
+        run: poetry install --no-root
+
+      - name: Run pytest
+        env:
+          API_KEY_TEST: ${{ secrets.API_KEY_TEST }}
+          SECRET_KEY_TEST: ${{ secrets.SECRET_KEY_TEST }}
+        run: |
+          poetry run pytest --cov=chartrider --junitxml=pytest.xml --cov-report=term-missing | tee pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml

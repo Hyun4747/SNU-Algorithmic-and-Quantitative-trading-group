@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d postgres -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-local-data:/var/lib/postgresql/data
+    restart: always
+
+  postgres-test:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=test
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: always
+
+  migration-job:
+    build: .
+    environment:
+      - POSTGRES_HOST=postgres
+    entrypoint: alembic upgrade head
+    depends_on:
+      - postgres
+    restart: "no"
+
+volumes:
+  postgres-local-data:
+    name: postgres-local-data
+  postgres-test-data:
+    name: postgres-test-data

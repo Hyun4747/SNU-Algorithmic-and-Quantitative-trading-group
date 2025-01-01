@@ -1,0 +1,95 @@
+version: "3"
+
+services:
+  telegram:
+    image: 542695926028.dkr.ecr.ap-northeast-2.amazonaws.com/chartrider:latest
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+    volumes:
+      - chartrider-data:/app/persistence
+    command: ["/app/chartrider/telegram/main.py"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  worker:
+    image: 542695926028.dkr.ecr.ap-northeast-2.amazonaws.com/chartrider:latest
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - POSTGRES_HOST=postgres
+    volumes:
+      - chartrider-data:/app/persistence
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["/app/chartrider/worker/main.py"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: chartrider
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq/
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: always
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d postgres -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - autoheal=true
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: always
+
+  migration-job:
+    image: 542695926028.dkr.ecr.ap-northeast-2.amazonaws.com/chartrider:latest
+    environment:
+      - POSTGRES_HOST=postgres
+    entrypoint: alembic upgrade head
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    restart: unless-stopped
+    environment:
+      - AUTOHEAL_INTERVAL=10
+      - AUTOHEAL_START_PERIOD=60
+      - AUTOHEAL_DEFAULT_STOP_TIMEOUT=10
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  chartrider-data:
+    name: chartrider-data
+  rabbitmq-data:
+    name: rabbitmq-data
+  postgres-data:
+    name: postgres-data
